@@ -1,0 +1,20 @@
+﻿<Window x:Class="ThreeNeighbors.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ThreeNeighbors"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Background="#1E1E1E">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <StackPanel Width="200" Grid.Column="0">
+            <Slider Minimum="5" Maximum="120" Value="{Binding ElementName=myPanel, Path = PointsCount}"></Slider>
+        </StackPanel>
+        <local:VisualPanel Grid.Column="1" x:Name="myPanel"></local:VisualPanel>
+    </Grid>
+
+</Window>
