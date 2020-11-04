@@ -12,7 +12,7 @@
             <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <StackPanel Width="200" Grid.Column="0">
-            <Slider Minimum="5" Maximum="120" Value="{Binding ElementName=myPanel, Path = PointsCount}"></Slider>
+            <Slider Minimum="5" Maximum="1200" Value="{Binding ElementName=myPanel, Path = PointsCount}"></Slider>
         </StackPanel>
         <local:VisualPanel Grid.Column="1" x:Name="myPanel"></local:VisualPanel>
     </Grid>

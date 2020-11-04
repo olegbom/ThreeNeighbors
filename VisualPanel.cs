@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -18,14 +19,12 @@ namespace ThreeNeighbors
         private VisualCollection _children;
 
         private List<MyPoint> _points = new List<MyPoint>();
-        
-        private List<MyLine> _lines = new List<MyLine>();
-        
+                
         private DrawingVisual _pointsDrawingVisual = new DrawingVisual();
 
         private DrawingVisual _linesDrawingVisual = new DrawingVisual();
 
-        private int _pointsCount = 20;
+        private int _pointsCount = 120;
         public int PointsCount
         {
             get => _pointsCount;
@@ -57,7 +56,56 @@ namespace ThreeNeighbors
                 DrawPoints();
                 GenerateLines();
                 DrawLines();
+                CompositionTarget.Rendering += OnRendering;
             };
+            this.Unloaded += (o, e) =>
+            {
+                CompositionTarget.Rendering -= OnRendering;
+            };
+        }
+
+        private Vector[] _newPoints;
+        private void OnRendering(object sender, EventArgs e)
+        {
+            if (_newPoints == null || _newPoints.Length != _pointsCount) 
+                _newPoints = new Vector[_pointsCount];
+            for (var i = 0; i < _points.Count; i++)
+            {
+               var myPoint = _points[i];
+                /* var a = myPoint.Lines[0].B.Coord;
+                var b = myPoint.Lines[1].B.Coord;
+                var c = myPoint.Lines[2].B.Coord;
+                var d = 2 * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y));
+
+                var al = a.X * a.X + a.Y * a.Y;
+                var bl = b.X * b.X + b.Y * b.Y;
+                var cl = c.X * c.X + c.Y * c.Y;
+
+                var ux = (al * (b.Y - c.Y) + bl * (c.Y - a.Y) + cl * (a.Y - b.Y)) / d;
+                var uy = (al * (c.X - b.X) + bl * (a.X - c.X) + cl * (b.X - a.X)) / d;
+
+                var u = new Vector(ux, uy);*/
+
+                _newPoints[i] = myPoint.Coord;
+                for (int j = 0; j < 3; j++)
+                {  
+                    var du = (myPoint.Lines[j].B.Coord - myPoint.Coord);
+                    var dl = du.Length;
+                    _newPoints[i] += du * (dl - 10) / 1000 / (j + 1);
+                }
+                
+                myPoint.Clear();
+            }
+
+            for (var i = 0; i < _points.Count; i++)
+            {
+                _points[i].Coord = _newPoints[i];
+            }
+            
+            DrawPoints();
+            GenerateLines();
+            DrawLines();
+            
         }
 
         private void GeneratePoints(int pointsCount)
@@ -86,7 +134,6 @@ namespace ThreeNeighbors
 
         private void GenerateLines()
         {
-            _lines.Clear();
 
             for (int i = 0; i < _points.Count; i++)
             {
@@ -117,8 +164,8 @@ namespace ThreeNeighbors
 
                     if (minIndex >= 0)
                     {
-                        var line = _points[i].CreateLine(_points[minIndex]);
-                        _lines.Add(line);
+                        _points[i].CreateLine(_points[minIndex]);
+                        
                         if (_points[i].Quantity == 3)
                             break;
                     }
@@ -131,34 +178,18 @@ namespace ThreeNeighbors
         {
 
             using var context = _linesDrawingVisual.RenderOpen();
-            foreach (var line in _lines)
+            foreach (var point in _points)
             {
-                line.Draw(context);
+                point.Lines[0]?.Draw(context);
+                point.Lines[1]?.Draw(context);
+                point.Lines[2]?.Draw(context);
             }
         }
-
-
-
-        private struct IndexedLine
-        {
-            public int A,B;
-            
-            public IndexedLine(int a, int b)
-            {
-                A = a;
-                B = b;
-            }
-
-            public override string ToString()
-            {
-                return $"{{{A}, {B}}}";
-            }
-        }
-
+        
         private class MyLine
         {
             public MyPoint A, B;
-            private Pen _linePen = new Pen(Brushes.WhiteSmoke, 1);
+            private static Pen _linePen = new Pen(Brushes.WhiteSmoke, 1);
 
             public MyLine(MyPoint a, MyPoint b)
             {
@@ -183,25 +214,29 @@ namespace ThreeNeighbors
             public MyPoint(Vector coord)
             {
                 Coord = coord;
+                for (int i = 0; i < 3; i++)
+                {
+                    Lines[i] = new MyLine(this, null);
+                }
             }
 
-            public MyLine CreateLine(MyPoint otherPoint)
+            public void CreateLine(MyPoint otherPoint)
             {
                 if (otherPoint == null)
                     throw new ArgumentNullException(nameof(otherPoint));
                 if(Quantity == 3)
                     throw new Exception("Point is full!");
                
-
-                MyLine line = new MyLine(this, otherPoint);
-                Lines[Quantity] = line;
+                Lines[Quantity].B = otherPoint;
                 Quantity++;
-
-                return line;
             }
 
-
-
+            public void Clear()
+            {
+                Quantity = 0;
+                Lines[0].B = Lines[1].B = Lines[2].B = null;
+            }
+            
             public void Draw(DrawingContext context)
             {
                 context.DrawEllipse(Brushes.CornflowerBlue, null, Coord.ToPoint(), 2, 2);
