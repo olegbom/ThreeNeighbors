@@ -91,8 +91,14 @@ namespace ThreeNeighbors
                 {  
                     var du = (myPoint.Lines[j].B.Coord - myPoint.Coord);
                     var dl = du.Length;
-                    _newPoints[i] += du * (dl - 10) / 1000 / (j + 1);
+                    _newPoints[i] += du/dl*Math.Sign(dl - 40)*Math.Min(1, Math.Abs(dl - 40));
                 }
+
+                if (_newPoints[i].X < 0) _newPoints[i].X = 0;
+                if (_newPoints[i].X > ActualWidth) _newPoints[i].X = ActualWidth;
+                if (_newPoints[i].Y < 0) _newPoints[i].Y = 0;
+                if (_newPoints[i].Y > ActualHeight) _newPoints[i].Y = ActualHeight;
+                
                 
                 myPoint.Clear();
             }
